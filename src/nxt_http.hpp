@@ -27,3 +27,4 @@ class nxt_http
 };
 
 #endif // NXT_HTTP_HPP
+

@@ -122,3 +122,4 @@ void nxt_ipc::send(const nxt_message& msg)
 	m_fifo_out.write(encode_short_be(size).data(), 2);
 	m_fifo_out.write(msg.data() - 2, size);
 }
+

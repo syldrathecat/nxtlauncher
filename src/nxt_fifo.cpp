@@ -1,7 +1,7 @@
 
 #include "nxt_fifo.hpp"
 
-#include "nxt_log.hpp"
+#include <stdexcept>
 
 #include <cerrno>
 #include <cstring>
@@ -83,7 +83,7 @@ bool nxt_fifo::read(char* data, std::size_t size)
 		if (result <= 0)
 		{
 			if (result != 0)
-				nxt_log(LOG_ERR, "Client communication failed: read failed: %s", std::strerror(errno));
+				throw std::runtime_error("Client communication failed: read failed: " + std::string(std::strerror(errno)));
 
 			return false;
 		}
@@ -104,7 +104,9 @@ bool nxt_fifo::write(const char* data, std::size_t size)
 
 		if (result <= 0)
 		{
-			nxt_log(LOG_ERR, "Client communication failed: write failed: %s", std::strerror(errno));
+			if (result != 0)
+				throw std::runtime_error("Client communication failed: write failed: " + std::string(std::strerror(errno)));
+
 			return false;
 		}
 
@@ -131,3 +133,4 @@ void nxt_fifo::unlink()
 		m_exists = false;
 	}
 }
+

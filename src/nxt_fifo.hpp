@@ -63,3 +63,4 @@ class nxt_fifo
 };
 
 #endif // NXT_FIFO_HPP
+

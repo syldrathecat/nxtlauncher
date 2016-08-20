@@ -2,7 +2,6 @@
 #define NXT_MESSAGE_HPP
 
 #include <algorithm>
-#include <stdexcept>
 #include <vector>
 
 #include <cstdint>
@@ -37,3 +36,4 @@ class nxt_message
 };
 
 #endif // RUNEMESSAGE_HPP
+

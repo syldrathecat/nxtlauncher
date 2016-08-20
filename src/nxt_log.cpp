@@ -13,8 +13,9 @@ void nxt_log(int level, const char* format, ...)
 
 	std::va_list args;
 	va_start(args, format);
-	std::fputs("[NXT] ", stderr);
-	std::vfprintf(stderr, format, args);
-	std::fputc('\n', stderr);
+	std::fputs("[NXT] ", stdout);
+	std::vfprintf(stdout, format, args);
+	std::fputc('\n', stdout);
 	va_end(args);
 }
+

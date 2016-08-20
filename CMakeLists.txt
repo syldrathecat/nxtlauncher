@@ -82,3 +82,4 @@ install(FILES runescape DESTINATION bin
 	            GROUP_READ             GROUP_EXECUTE
 	            WORLD_READ             WORLD_EXECUTE
 )
+

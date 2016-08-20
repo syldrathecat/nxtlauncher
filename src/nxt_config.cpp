@@ -1,13 +1,7 @@
 
 #include "nxt_config.hpp"
 
-#include "nxt_log.hpp"
-
 #include <algorithm>
-
-#include <cstdio>
-
-#include <unistd.h>
 
 nxt_config::nxt_config(const char* id)
 	: m_id(id)
@@ -58,3 +52,4 @@ std::string nxt_config::get_else(const std::string& key, const char* fallback) c
 	else
 		return fallback;
 }
+

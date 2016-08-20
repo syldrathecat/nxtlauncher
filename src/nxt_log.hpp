@@ -11,3 +11,4 @@ extern int log_level;
 void nxt_log(int level, const char* format, ...);
 
 #endif // NXT_LOG_HPP
+

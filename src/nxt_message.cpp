@@ -131,3 +131,4 @@ int nxt_message::id() const
 {
 	return decode_short_le(m_data.data());
 }
+

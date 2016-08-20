@@ -1,11 +1,11 @@
 
 #include "nxt_decompress.hpp"
 
-#include <climits>
-#include <cstdint>
 #include <memory>
 #include <stdexcept>
 #include <string>
+
+#include <cstdint>
 
 #include <lzma.h>
 
@@ -52,3 +52,4 @@ std::string nxt_decompress(const char* data, std::size_t size)
 
 	return output;
 }
+

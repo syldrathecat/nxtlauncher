@@ -70,3 +70,4 @@ std::uint32_t nxt_crc32(const char* data, std::size_t size, std::uint32_t hash)
 
 	return (hash ^ 0xFFFFFFFF);
 }
+

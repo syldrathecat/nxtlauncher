@@ -65,3 +65,4 @@ void nxt_file::put(const char* path, const char* data, std::size_t size, file_mo
 
 	std::fclose(fh);
 }
+

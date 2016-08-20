@@ -2,7 +2,6 @@
 #define NXT_IPC_HPP
 
 #include "nxt_fifo.hpp"
-#include "nxt_log.hpp"
 #include "nxt_message.hpp"
 
 #include <functional>
@@ -47,3 +46,4 @@ class nxt_ipc
 };
 
 #endif // NXT_IPC_HPP
+

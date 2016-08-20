@@ -336,7 +336,7 @@ int main(int argc, char** argv) try
 			std::string filename = launcher_path + '/' + name;
 			unsigned long crc = std::atol(jav_config.get("download_crc_" + is).c_str());
 
-			nxt_log(LOG_VERBOSE, "Checking %s...", filename.c_str());
+			nxt_log(LOG_VERBOSE, "Checking binary %s", filename.c_str());
 			std::string filedata;
 
 			try
@@ -520,3 +520,4 @@ catch (...)
 {
 	throw;
 }
+

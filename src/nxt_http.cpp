@@ -3,6 +3,8 @@
 
 #include <stdexcept>
 
+#include <cstddef>
+
 #include "nxt_log.hpp"
 
 namespace
@@ -61,7 +63,7 @@ std::string nxt_http::get(const char* url, bool progress)
 
 	curl_easy_setopt(m_curl, CURLOPT_NOPROGRESS, !progress);
 
-	nxt_log(LOG_VERBOSE, "HTTP GET %s ...", url);
+	nxt_log(LOG_VERBOSE, "HTTP GET %s...", url);
 
 	result = curl_easy_perform(m_curl);
 
@@ -70,3 +72,4 @@ std::string nxt_http::get(const char* url, bool progress)
 
 	return buffer;
 }
+

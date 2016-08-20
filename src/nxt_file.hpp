@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include <cstddef>
+
 // Local file reader - just made to look similar to nxt_http
 class nxt_file
 {
@@ -21,3 +23,4 @@ class nxt_file
 };
 
 #endif // NXT_FILE_HPP
+

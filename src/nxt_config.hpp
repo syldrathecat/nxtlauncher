@@ -26,3 +26,4 @@ class nxt_config
 };
 
 #endif // NXT_CONFIG_HPP
+
