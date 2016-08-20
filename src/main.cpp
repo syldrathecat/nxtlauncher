@@ -220,7 +220,13 @@ int main(int argc, char** argv) try
 {
 // --- Initialize things ---
 	int mypid = static_cast<int>(::getpid()) & 0xFFFF;
-	std::string pidcode = std::to_string(mypid);
+	std::string pidcode;
+
+	{
+		char pidbuf[5];
+		std::snprintf(pidbuf, sizeof(pidbuf), "%X", mypid);
+		pidcode = pidbuf;
+	}
 
 	std::string fifo_in_filename = build_fifo_filename(pidcode.c_str(), FIFO_IN_SUFFIX);
 	std::string fifo_out_filename = build_fifo_filename(pidcode.c_str(), FIFO_OUT_SUFFIX);

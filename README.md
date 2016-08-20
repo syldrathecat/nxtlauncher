@@ -90,3 +90,7 @@ Features from the official launcher missing in **nxtlauncher**:
 * No GUI loading screen.
 * No prompt when closing the game while logged in.
 
+## Other Issues
+
+* Because the client thinks it's embedded in another window, its communication with the root window causes the screen to flash black when logging out sometimes.
+
