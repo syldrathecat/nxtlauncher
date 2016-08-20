@@ -4,6 +4,7 @@
 #include "nxt_log.hpp"
 
 #include <cerrno>
+#include <cstring>
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -16,6 +17,29 @@ nxt_fifo::nxt_fifo(const char* filename)
 	, m_exists(false)
 {
 	::unlink(filename);
+}
+
+nxt_fifo::nxt_fifo(nxt_fifo&& other)
+	: m_filename(other.m_filename)
+	, m_fd(other.m_fd)
+	, m_exists(other.m_exists)
+{
+	other.m_filename = nullptr;
+	other.m_fd = -1;
+	other.m_exists = false;
+}
+
+nxt_fifo& nxt_fifo::operator=(nxt_fifo&& other)
+{
+	m_filename = other.m_filename;
+	m_fd = other.m_fd;
+	m_exists = other.m_exists;
+
+	other.m_filename = nullptr;
+	other.m_fd = -1;
+	other.m_exists = false;
+
+	return *this;
 }
 
 nxt_fifo::~nxt_fifo()
@@ -59,7 +83,7 @@ bool nxt_fifo::read(char* data, std::size_t size)
 		if (result <= 0)
 		{
 			if (result != 0)
-				nxt_log(LOG_ERR, "librs2client FIFO communication failed: read failed [errno=%i]", errno);
+				nxt_log(LOG_ERR, "Client communication failed: read failed: %s", std::strerror(errno));
 
 			return false;
 		}
@@ -80,7 +104,7 @@ bool nxt_fifo::write(const char* data, std::size_t size)
 
 		if (result <= 0)
 		{
-			nxt_log(LOG_ERR, "librs2client FIFO communication failed: write failed [errno=%i]", errno);
+			nxt_log(LOG_ERR, "Client communication failed: write failed: %s", std::strerror(errno));
 			return false;
 		}
 

@@ -9,7 +9,11 @@
 
 #include <unistd.h>
 
-void parse_config(nxt_config_parser::config_t& config, const std::string& config_string)
+nxt_config::nxt_config(const char* id)
+	: m_id(id)
+{ }
+
+void nxt_config::parse(const std::string& config_string)
 {
 	auto it = config_string.begin();
 	auto eol_it = it;
@@ -31,6 +35,26 @@ void parse_config(nxt_config_parser::config_t& config, const std::string& config
 				continue;
 		}
 
-		config.insert({std::string(it, eq_it), std::string(eq_it + 1, eol_it)});
+		m_data.insert({std::string(it, eq_it), std::string(eq_it + 1, eol_it)});
 	}
+}
+
+const std::string& nxt_config::get(const std::string& key) const
+{
+	auto it = m_data.find(key);
+
+	if (it != m_data.end())
+		return it->second;
+	else
+		throw std::runtime_error(std::string(m_id) + " missing configuration value: " + key);
+}
+
+std::string nxt_config::get_else(const std::string& key, const char* fallback) const
+{
+	auto it = m_data.find(key);
+
+	if (it != m_data.end())
+		return it->second;
+	else
+		return fallback;
 }

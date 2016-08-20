@@ -32,6 +32,7 @@ class nxt_ipc
 
 		// Moveable, but probably a bad idea if handlers reference the original
 		nxt_ipc(nxt_ipc&&) = default;
+		nxt_ipc& operator=(nxt_ipc&&) = default;
 
 		// Registers a handler for a given message ID
 		// Registering new handlers will overwrite old ones

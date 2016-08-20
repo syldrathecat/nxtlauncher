@@ -29,8 +29,9 @@ class nxt_fifo
 		nxt_fifo(const nxt_fifo&) = delete;
 		nxt_fifo& operator=(const nxt_fifo&) = delete;
 
-		// Moves control of the file to another instance
-		nxt_fifo(nxt_fifo&&) = default;
+		// Moveable
+		nxt_fifo(nxt_fifo&&);
+		nxt_fifo& operator=(nxt_fifo&&);
 		
 		// Automatically closes and deletes the files
 		~nxt_fifo();

@@ -12,6 +12,9 @@ class nxt_message
 {
 	private:
 		std::vector<char> m_data;
+		std::size_t m_pos;
+
+		void overflow_check(std::size_t size);
 
 	public:
 		nxt_message(const char* data, std::size_t size);
@@ -22,6 +25,11 @@ class nxt_message
 		void add_short(std::uint16_t s);
 		void add_int(std::uint32_t i);
 		void add_stringz(const char* c);
+
+		void get_raw(char* data, std::size_t size);
+		std::uint8_t get_byte();
+		std::uint16_t get_short();
+		std::uint32_t get_int();
 
 		int id() const;
 		std::size_t size() const { return m_data.size() - 2; }
