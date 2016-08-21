@@ -1,14 +1,17 @@
 #!/bin/sh
 
-if [ -z $1 ]; then
-	configURI=http://www.runescape.com/k=5/l=\$\(Language:0\)/jav_config.ws
-else
-	configURI=$1
-	shift
-fi
+configURI=http://www.runescape.com/k=5/l=\$\(Language:0\)/jav_config.ws
+flags=""
+
+for x in "$@"; do
+	case "$x" in
+		-*) flags="$flags $x" ;;
+		*)  configURI=$x ;;
+	esac
+done
 
 export PULSE_PROP_OVERRIDE="application.name='RuneScape' application.icon_name='runescape' media.role='game'"
 export SDL_VIDEO_X11_WMCLASS="RuneScape"
 export MESA_GL_VERSION_OVERRIDE=3.0
-nxtlauncher --configURI $configURI $@
+nxtlauncher --configURI $configURI$flags
 
