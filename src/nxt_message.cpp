@@ -29,16 +29,16 @@ namespace
 
 	std::array<char, 2> encode_short_le(unsigned int x)
 	{
-		return {static_cast<char>((x >> 8) & 0xFF),
-		        static_cast<char>( x       & 0xFF)};
+		return {{static_cast<char>((x >> 8) & 0xFF),
+		         static_cast<char>( x       & 0xFF)}};
 	}
 
 	std::array<char, 4> encode_int_le(unsigned int x)
 	{
-		return {static_cast<char>((x >> 24) & 0xFF),
-		        static_cast<char>((x >> 16) & 0xFF),
-		        static_cast<char>((x >>  8) & 0xFF),
-		        static_cast<char>( x        & 0xFF)};
+		return {{static_cast<char>((x >> 24) & 0xFF),
+		         static_cast<char>((x >> 16) & 0xFF),
+		         static_cast<char>((x >>  8) & 0xFF),
+		         static_cast<char>( x        & 0xFF)}};
 	}
 }
 

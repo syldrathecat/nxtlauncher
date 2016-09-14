@@ -24,8 +24,8 @@ namespace
 
 	std::array<char, 2> encode_short_be(unsigned int x)
 	{
-		return {static_cast<char>( x       & 0xFF),
-		        static_cast<char>((x >> 8) & 0xFF)};
+		return {{static_cast<char>( x       & 0xFF),
+		         static_cast<char>((x >> 8) & 0xFF)}};
 	}
 
 	void log_message(const char* desc, const nxt_message& msg)
