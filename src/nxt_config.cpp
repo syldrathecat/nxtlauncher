@@ -3,6 +3,8 @@
 
 #include <algorithm>
 
+#include <cstring>
+
 nxt_config::nxt_config(const char* id)
 	: m_id(id)
 { }
@@ -20,8 +22,8 @@ void nxt_config::parse(const std::string& config_string)
 		if (eq_it == eol_it)
 			continue;
 
-		if (std::equal(it, eq_it, "param", "param" + 5)
-		 || std::equal(it, eq_it, "msg", "msg" + 3))
+		if ((eq_it - it == 5 && std::strncmp(&*it, "param", 5) == 0)
+		 || (eq_it - it == 3 && std::strncmp(&*it, "msg", 3) == 0))
 		{
 			eq_it = std::find(eq_it + 1, eol_it, '=');
 
