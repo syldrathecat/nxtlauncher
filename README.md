@@ -75,11 +75,9 @@ It also supports re-using downloaded game configurations / sessions (valid for 2
 
 **nxtlauncher** will read certain additional settings from the launcher config file (`NXTLAUNCHER_CONFIG` or *preferences.cfg*).
 
-**Note:** Spaces should not appear around the equals sign (e.g. `x_client_width=800`).
+**Note:** Spaces should not appear around the equals sign (e.g. `x_config_uri=http://...`).
 
 * `x_config_uri` - Overrides the game configuration URI. Defaults to *http://www.runescape.com/k=5/l=$(Language:0)/jav_config.ws*.
-* `x_client_width` - Width to open client at. Defaults to 1024.
-* `x_client_height` - Height to open client at. Defaults to 768.
 * `x_saved_config_path` - Path to save downloaded game configuration for `--reuse`. Make blank to not save configs. Defaults to */tmp/jav_config.cache*.
 
 ## Wishlist

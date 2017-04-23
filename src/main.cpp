@@ -9,8 +9,10 @@
 
 #include <algorithm>
 #include <stdexcept>
+#include <memory>
 #include <string>
 #include <thread>
+#include <unordered_set>
 #include <utility>
 
 #include <cstdarg>
@@ -18,6 +20,7 @@
 #include <cstdlib>
 
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <dlfcn.h>
 #include <unistd.h>
 
@@ -194,6 +197,7 @@ Replacement launcher program for RuneScape NXT.\n\
 	}
 
 	// Pack the parameters from the game configuration in to a long string that's passed to the client library
+	// Obsolete code for Pre NXT 2.2.4
 	std::string build_launcher_params(const nxt_config& jav_config, const char* pidcode)
 	{
 		std::string params;
@@ -211,6 +215,70 @@ Replacement launcher program for RuneScape NXT.\n\
 
 		params += "launcher ";
 		params += pidcode;
+
+		return params;
+	}
+
+	// Helper type for storing an argument list
+	struct launcher_params
+	{
+		std::vector<char*> args;
+
+		void add(const char* arg)
+		{
+			char* buf = strdup(arg);
+
+			try
+			{
+				args.push_back(buf);
+			}
+			catch (...)
+			{
+				std::free(buf);
+				throw;
+			}
+		}
+
+		void finish()
+		{
+			args.push_back(nullptr);
+		}
+
+		char** c_array()
+		{
+			return &*args.begin();
+		}
+
+		~launcher_params()
+		{
+			for (char* arg : args)
+				std::free(arg);
+		}
+	};
+
+	// Pack the parameters from the game configuration in to an argument list
+	launcher_params build_launcher_params_new(const nxt_config& jav_config, const char* arg0, const char* pidcode)
+	{
+		launcher_params params;
+
+		params.add(arg0);
+
+		for (auto x : jav_config.data())
+		{
+			const std::string& config_key = x.first;
+			const std::string& config_value = x.second;
+
+			if (config_key.compare(0, 6, "param=") == 0)
+			{
+				params.add(config_key.substr(6).c_str());
+				params.add(config_value.c_str());
+			}
+		}
+
+		params.add("launcher");
+		params.add(pidcode);
+
+		params.finish();
 
 		return params;
 	}
@@ -320,22 +388,30 @@ int main(int argc, char** argv) try
 	}
 
 // --- Download client files ---
-	if (!reuse_files)
+	std::string binary_name_0;
+	std::unordered_set<std::string> binary_names;
+
+	std::string codebase = jav_config.get("codebase");
+	int binary_count = std::atoi(jav_config.get("binary_count").c_str());
+
+	if (binary_count < 1)
+		nxt_log(LOG_ERR, "Configuration file has no binaries to download!");
+
+	for (int i = 0; i < binary_count; ++i)
 	{
-		std::string codebase = jav_config.get("codebase");
-		int binary_count = std::atoi(jav_config.get("binary_count").c_str());
+		std::string is = std::to_string(i);
 
-		if (binary_count < 1)
-			nxt_log(LOG_ERR, "Configuration file has no binaries to download!");
+		std::string name = jav_config.get("download_name_" + is);
+		std::string filename = launcher_path + '/' + name;
+		unsigned long crc = std::atol(jav_config.get("download_crc_" + is).c_str());
 
-		for (int i = 0; i < binary_count; ++i)
+		if (i == 0)
+			binary_name_0 = name;
+
+		binary_names.insert(name);
+
+		if (!reuse_files)
 		{
-			std::string is = std::to_string(i);
-
-			std::string name = jav_config.get("download_name_" + is);
-			std::string filename = launcher_path + '/' + name;
-			unsigned long crc = std::atol(jav_config.get("download_crc_" + is).c_str());
-
 			nxt_log(LOG_VERBOSE, "Checking binary %s", filename.c_str());
 			std::string filedata;
 
@@ -374,15 +450,30 @@ int main(int argc, char** argv) try
 	std::string title       = jav_config.get("title"),
 	            binary_name = jav_config.get("binary_name");
 
+// Workaround for mis-matched binary_name and download_name_0 since "NXT v2.2.4" (April 2017)
+	if (binary_names.count(binary_name) == 0)
+	{
+		nxt_log(LOG_VERBOSE, "Workaround: %s was not a downloaded binary, using %s instead.", binary_name.c_str(), binary_name_0.c_str());
+		binary_name = binary_name_0;
+	}
+
 // --- Load and run game + set up IPC ---
+	int launcher_version = std::atoi(jav_config.get("launcher_version").c_str());
+
 	nxt_log(LOG_LOG, "Loading %s (%s)...", title.c_str(), binary_name.c_str());
 
-	void* librs2client = ::dlopen((launcher_path + '/' + binary_name).c_str(), RTLD_LAZY);
+	void* librs2client = nullptr;
 
-	if (!librs2client)
+	// Pre NXT 2.2.4 code
+	if (launcher_version < 224)
 	{
-		nxt_log(LOG_ERR, "dlopen(%s) failed: %s", binary_name.c_str(), dlerror());
-		return 1;
+		librs2client = ::dlopen((launcher_path + '/' + binary_name).c_str(), RTLD_LAZY);
+
+		if (!librs2client)
+		{
+			nxt_log(LOG_ERR, "dlopen(%s) failed: %s", binary_name.c_str(), dlerror());
+			return 1;
+		}
 	}
 
 	nxt_ipc ipc(fifo_in_filename.c_str(), fifo_out_filename.c_str());
@@ -490,24 +581,49 @@ int main(int argc, char** argv) try
 
 	std::thread fifo_thread([&ipc]() { ipc(); });
 
-	RunMainBootstrap_t RunMainBootstrap = reinterpret_cast<RunMainBootstrap_t>(::dlsym(librs2client, "RunMainBootstrap"));
+	int result;
 
-	if (!RunMainBootstrap)
+	// Pre NXT 2.2.4 code
+	if (launcher_version < 224)
 	{
-		nxt_log(LOG_ERR, "dlsym(RunMainBootstrap) failed: %s", dlerror());
-		return 1;
+		RunMainBootstrap_t RunMainBootstrap = reinterpret_cast<RunMainBootstrap_t>(::dlsym(librs2client, "RunMainBootstrap"));
+
+		if (!RunMainBootstrap)
+		{
+			nxt_log(LOG_ERR, "dlsym(RunMainBootstrap) failed: %s", dlerror());
+			return 1;
+		}
+
+		std::string params = build_launcher_params(jav_config, pidcode.c_str());
+
+		nxt_log(LOG_VERY_VERBOSE, "params: %s", params.c_str());
+
+		nxt_log(LOG_VERBOSE, "Running shared library client (%ix%i)...", client_w, client_h);
+		result = RunMainBootstrap(params.c_str(), client_w, client_h, 1, 0);
+
+		::dlclose(librs2client);
+	}
+	else
+	{
+		std::string binary_fullname = (launcher_path + '/' + binary_name);
+		launcher_params params = build_launcher_params_new(jav_config, binary_fullname.c_str(), pidcode.c_str());
+
+		nxt_log(LOG_VERBOSE, "Running executable client (%s)...", binary_fullname.c_str());
+
+		pid_t rs2pid = fork();
+
+		if (rs2pid > 0)
+		{
+			waitpid(rs2pid, &result, 0);
+		}
+		else
+		{
+			execve(binary_fullname.c_str(), params.c_array(), environ);
+			return 1;
+		}
 	}
 
-	std::string params = build_launcher_params(jav_config, pidcode.c_str());
-
-	nxt_log(LOG_VERY_VERBOSE, "params: %s", params.c_str());
-
-	nxt_log(LOG_VERBOSE, "Running client (%ix%i)...", client_w, client_h);
-	int result = RunMainBootstrap(params.c_str(), client_w, client_h, 1, 0);
-
 	nxt_log(LOG_VERY_VERBOSE, "result: %i", result);
-
-	::dlclose(librs2client);
 
 	return result;
 }
