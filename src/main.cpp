@@ -57,7 +57,7 @@
 #define CLIENT_HEIGHT "768"
 
 // Default client configuration URI
-#define CLIENT_CONFIG_URI "http://www.runescape.com/k=5/l=$(Language:0)/jav_config.ws"
+#define CLIENT_CONFIG_URI "https://www.runescape.com/k=5/l=$(Language:0)/jav_config.ws"
 
 // ---
 
@@ -355,6 +355,8 @@ int main(int argc, char** argv) try
 	int client_w = std::atoi(config.get_else("x_client_width", CLIENT_WIDTH).c_str()),
 	    client_h = std::atoi(config.get_else("x_client_height", CLIENT_HEIGHT).c_str());
 
+	bool allow_insecure_dl = std::atoi(config.get_else("x_allow_insecure_dl", "0").c_str());
+
 // --- Download game configuration ---
 	nxt_http http;
 	nxt_config jav_config("jav_config");
@@ -393,6 +395,16 @@ int main(int argc, char** argv) try
 
 	std::string codebase = jav_config.get("codebase");
 	int binary_count = std::atoi(jav_config.get("binary_count").c_str());
+
+	if (!allow_insecure_dl)
+	{
+		if (codebase.substr(0, 8) != "https://")
+		{
+			nxt_log(LOG_ERR, "Downloaded configuration instructed us to download files over plain-text HTTP. Aborting!");
+			nxt_log(LOG_ERR, "Set 'x_allow_insecure_dl=1' in %s to bypass this security check.", preferences_path.c_str());
+			return 1;
+		}
+	}
 
 	if (binary_count < 1)
 		nxt_log(LOG_ERR, "Configuration file has no binaries to download!");

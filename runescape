@@ -1,6 +1,6 @@
 #!/bin/sh
 
-configURI=http://www.runescape.com/k=5/l=\$\(Language:0\)/jav_config.ws
+configURI=https://www.runescape.com/k=5/l=\$\(Language:0\)/jav_config.ws
 flags=""
 
 for x in "$@"; do

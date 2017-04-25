@@ -75,10 +75,11 @@ It also supports re-using downloaded game configurations / sessions (valid for 2
 
 **nxtlauncher** will read certain additional settings from the launcher config file (`NXTLAUNCHER_CONFIG` or *preferences.cfg*).
 
-**Note:** Spaces should not appear around the equals sign (e.g. `x_config_uri=http://...`).
+**Note:** Spaces should not appear around the equals sign (e.g. `x_config_uri=https://...`).
 
-* `x_config_uri` - Overrides the game configuration URI. Defaults to *http://www.runescape.com/k=5/l=$(Language:0)/jav_config.ws*.
+* `x_config_uri` - Overrides the game configuration URI. Defaults to *https://www.runescape.com/k=5/l=$(Language:0)/jav_config.ws*.
 * `x_saved_config_path` - Path to save downloaded game configuration for `--reuse`. Make blank to not save configs. Defaults to */tmp/jav_config.cache*.
+* `x_allow_insecure_dl` - Allows binary downloads over plain-text HTTP, in case Jagex stops offering HTTPS downloads some day.
 
 ## Wishlist
 
