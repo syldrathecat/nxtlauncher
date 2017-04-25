@@ -19,6 +19,7 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <dlfcn.h>
@@ -282,6 +283,38 @@ Replacement launcher program for RuneScape NXT.\n\
 
 		return params;
 	}
+
+	// ATtempts to set the execute permission on a file
+	void make_executable(const char* binary_name)
+	{
+		struct stat binary_stat;
+
+		if (stat(binary_name, &binary_stat) != 0)
+		{
+			nxt_log(LOG_ERR, "Could not stat %s. Client launch may fail", binary_name);
+			return;
+		}
+
+		mode_t binary_mode = binary_stat.st_mode;
+
+		if (!S_ISREG(binary_mode))
+		{
+			nxt_log(LOG_ERR, "%s is not a regular file. Client launch may fail", binary_name);
+			return;
+		}
+
+		mode_t new_binary_mode = binary_mode | (S_IXUSR | S_IXGRP | S_IXOTH);
+
+		if (new_binary_mode != binary_mode)
+		{
+			nxt_log(LOG_VERBOSE, "Making %s executable...", binary_name);
+			if (chmod(binary_name, new_binary_mode) != 0)
+			{
+				nxt_log(LOG_ERR, "Could not chmod %s. Client launch may fail", binary_name);
+				return;
+			}
+		}
+	}
 }
 
 int main(int argc, char** argv) try
@@ -401,7 +434,7 @@ int main(int argc, char** argv) try
 		if (codebase.substr(0, 8) != "https://")
 		{
 			nxt_log(LOG_ERR, "Downloaded configuration instructed us to download files over plain-text HTTP. Aborting!");
-			nxt_log(LOG_ERR, "Set 'x_allow_insecure_dl=1' in %s to bypass this security check.", preferences_path.c_str());
+			nxt_log(LOG_ERR, "Set 'x_allow_insecure_dl=1' in %s to bypass this security check", preferences_path.c_str());
 			return 1;
 		}
 	}
@@ -462,16 +495,23 @@ int main(int argc, char** argv) try
 	std::string title       = jav_config.get("title"),
 	            binary_name = jav_config.get("binary_name");
 
+	int launcher_version = std::atoi(jav_config.get("launcher_version").c_str());
+
 // Workaround for mis-matched binary_name and download_name_0 since "NXT v2.2.4" (April 2017)
 	if (binary_names.count(binary_name) == 0)
 	{
-		nxt_log(LOG_VERBOSE, "Workaround: %s was not a downloaded binary, using %s instead.", binary_name.c_str(), binary_name_0.c_str());
+		nxt_log(LOG_VERBOSE, "Workaround: %s was not a downloaded binary, using %s instead", binary_name.c_str(), binary_name_0.c_str());
 		binary_name = binary_name_0;
 	}
 
-// --- Load and run game + set up IPC ---
-	int launcher_version = std::atoi(jav_config.get("launcher_version").c_str());
+// --- Set permissions on downloaded binary if required ---
+	if (launcher_version >= 224)
+	{
+		std::string binary_fullname = (launcher_path + '/' + binary_name);
+		make_executable(binary_fullname.c_str());
+	}
 
+// --- Load and run game + set up IPC ---
 	nxt_log(LOG_LOG, "Loading %s (%s)...", title.c_str(), binary_name.c_str());
 
 	void* librs2client = nullptr;
