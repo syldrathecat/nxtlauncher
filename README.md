@@ -2,6 +2,8 @@
 
 **nxtlauncher** is a third-party launcher for RuneScape NXT on Linux.
 
+Current version is **2.0**, compatible with NXT **2.2.4**.
+
 **Warning: Using this probably violates RuneScape's terms of service and might stop working one day.**
 
 ## What?
@@ -30,9 +32,7 @@ Note that you still need to ensure you install the dependencies for the game cli
 
 ### Dependencies
 
-**nxtlauncher** depends on libdl and getopt (both part of glibc), libcurl, liblzma, and an optional dependency on X11.
-
-If X11 is not detected by CMake, the title of the game window will not be set by the launcher.
+**nxtlauncher** depends on libdl and getopt (both part of glibc), libcurl, and liblzma.
 
 ### Build + Install Steps
 

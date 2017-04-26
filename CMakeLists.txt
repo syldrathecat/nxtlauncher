@@ -47,21 +47,9 @@ install(TARGETS nxtlauncher
 
 find_package(CURL REQUIRED)
 find_package(LibLZMA REQUIRED)
-find_package(X11)
 
 target_include_directories(nxtlauncher SYSTEM PRIVATE ${CURL_INCLUDE_DIRS} ${LIBLZMA_INCLUDE_DIRS})
 target_link_libraries(nxtlauncher ${CURL_LIBRARIES} ${LIBLZMA_LIBRARIES})
-
-if(X11_FOUND)
-	target_include_directories(nxtlauncher SYSTEM PRIVATE ${X11_INCLUDE_DIRS})
-	target_link_libraries(nxtlauncher ${X11_LIBRARIES})
-	target_compile_definitions(nxtlauncher PRIVATE ENABLE_X11)
-else()
-	message(WARNING "X11 library not found - window title will not be set")
-endif()
-
-# for dlopen, dlsym, dlclose
-target_link_libraries(nxtlauncher dl)
 
 # -----------
 

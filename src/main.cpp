@@ -22,19 +22,16 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <dlfcn.h>
 #include <unistd.h>
 
 #include <getopt.h>
 
-#ifdef ENABLE_X11
-#include <X11/Xlib.h>
-#include <X11/Xatom.h>
-#endif
-
 // ---
 
-#define NXTLAUNCHER_VERSION "1.0"
+#define NXTLAUNCHER_VERSION "2.0"
+
+// Current compatible official launcher version
+#define LAUNCHER_COMPAT_VERSION 224
 
 // 1 = 32-bit(?) Windows
 // 2 = 64-bit(?) Windows
@@ -195,29 +192,6 @@ Replacement launcher program for RuneScape NXT.\n\
 
 		if (token_pos != std::string::npos)
 			uri.replace(token_pos, token_length, language);
-	}
-
-	// Pack the parameters from the game configuration in to a long string that's passed to the client library
-	// Obsolete code for Pre NXT 2.2.4
-	std::string build_launcher_params(const nxt_config& jav_config, const char* pidcode)
-	{
-		std::string params;
-
-		params.reserve(1536);
-
-		for (auto x : jav_config.data())
-		{
-			const std::string& config_key = x.first;
-			const std::string& config_value = x.second;
-
-			if (config_key.compare(0, 6, "param=") == 0)
-				params = params + '"' + config_key.substr(6) + '"' + ' ' + '"' + config_value + '"' + ' ';
-		}
-
-		params += "launcher ";
-		params += pidcode;
-
-		return params;
 	}
 
 	// Helper type for storing an argument list
@@ -385,9 +359,6 @@ int main(int argc, char** argv) try
 	            user_folder  = config.get("user_folder"),
 	            saved_config = config.get_else("x_saved_config_path", SAVED_CONFIG_LOCATION);
 
-	int client_w = std::atoi(config.get_else("x_client_width", CLIENT_WIDTH).c_str()),
-	    client_h = std::atoi(config.get_else("x_client_height", CLIENT_HEIGHT).c_str());
-
 	bool allow_insecure_dl = std::atoi(config.get_else("x_allow_insecure_dl", "0").c_str());
 
 // --- Download game configuration ---
@@ -497,6 +468,12 @@ int main(int argc, char** argv) try
 
 	int launcher_version = std::atoi(jav_config.get("launcher_version").c_str());
 
+	if (launcher_version != LAUNCHER_COMPAT_VERSION)
+	{
+		nxt_log(LOG_LOG, "Unknown launcher version: %d -- %d expected", launcher_version, LAUNCHER_COMPAT_VERSION);
+		nxt_log(LOG_LOG, "nxtlauncher may be out of date and no longer function correctly");
+	}
+
 // Workaround for mis-matched binary_name and download_name_0 since "NXT v2.2.4" (April 2017)
 	if (binary_names.count(binary_name) == 0)
 	{
@@ -505,29 +482,10 @@ int main(int argc, char** argv) try
 	}
 
 // --- Set permissions on downloaded binary if required ---
-	if (launcher_version >= 224)
-	{
-		std::string binary_fullname = (launcher_path + '/' + binary_name);
-		make_executable(binary_fullname.c_str());
-	}
+	std::string binary_fullname = (launcher_path + '/' + binary_name);
+	make_executable(binary_fullname.c_str());
 
-// --- Load and run game + set up IPC ---
-	nxt_log(LOG_LOG, "Loading %s (%s)...", title.c_str(), binary_name.c_str());
-
-	void* librs2client = nullptr;
-
-	// Pre NXT 2.2.4 code
-	if (launcher_version < 224)
-	{
-		librs2client = ::dlopen((launcher_path + '/' + binary_name).c_str(), RTLD_LAZY);
-
-		if (!librs2client)
-		{
-			nxt_log(LOG_ERR, "dlopen(%s) failed: %s", binary_name.c_str(), dlerror());
-			return 1;
-		}
-	}
-
+// --- Set up IPC ---
 	nxt_ipc ipc(fifo_in_filename.c_str(), fifo_out_filename.c_str());
 
 	// First message sent by client to launcher
@@ -553,33 +511,6 @@ int main(int argc, char** argv) try
 	// where XX XX XX XX is the game's window ID
 	ipc.register_handler(0x0002, [&](nxt_message& msg)
 	{
-		if (msg.size() == 10)
-		{
-#ifdef ENABLE_X11
-			msg.get_short();
-			msg.get_int();
-			unsigned int window_id = msg.get_int();
-
-			nxt_log(LOG_VERBOSE, "Setting title of window id 0x%x...", window_id);
-
-			Display* display = XOpenDisplay(nullptr);
-
-			if (!display)
-			{
-				nxt_log(LOG_ERR, "Could not open display. Window title will not be set");
-			}
-			else
-			{
-				XChangeProperty(display, static_cast<Window>(window_id), XA_WM_NAME, XA_STRING, CHAR_BIT,
-					PropModeReplace, reinterpret_cast<const unsigned char*>(title.data()), static_cast<int>(title.size()));
-
-				XCloseDisplay(display);
-			}
-#else
-			nxt_log(LOG_LOG, "Not compiled with X11 support. Window title will not be set");
-#endif
-		}
-
 		nxt_log(LOG_LOG, "Loading...");
 	});
 
@@ -633,46 +564,25 @@ int main(int argc, char** argv) try
 
 	std::thread fifo_thread([&ipc]() { ipc(); });
 
+// --- Launch the client ---
+	nxt_log(LOG_LOG, "Launching %s...", title.c_str());
+
 	int result;
 
-	// Pre NXT 2.2.4 code
-	if (launcher_version < 224)
+	launcher_params params = build_launcher_params_new(jav_config, binary_fullname.c_str(), pidcode.c_str());
+
+	nxt_log(LOG_VERBOSE, "Running executable client (%s)...", binary_fullname.c_str());
+
+	pid_t rs2pid = fork();
+
+	if (rs2pid > 0)
 	{
-		RunMainBootstrap_t RunMainBootstrap = reinterpret_cast<RunMainBootstrap_t>(::dlsym(librs2client, "RunMainBootstrap"));
-
-		if (!RunMainBootstrap)
-		{
-			nxt_log(LOG_ERR, "dlsym(RunMainBootstrap) failed: %s", dlerror());
-			return 1;
-		}
-
-		std::string params = build_launcher_params(jav_config, pidcode.c_str());
-
-		nxt_log(LOG_VERY_VERBOSE, "params: %s", params.c_str());
-
-		nxt_log(LOG_VERBOSE, "Running shared library client (%ix%i)...", client_w, client_h);
-		result = RunMainBootstrap(params.c_str(), client_w, client_h, 1, 0);
-
-		::dlclose(librs2client);
+		waitpid(rs2pid, &result, 0);
 	}
 	else
 	{
-		std::string binary_fullname = (launcher_path + '/' + binary_name);
-		launcher_params params = build_launcher_params_new(jav_config, binary_fullname.c_str(), pidcode.c_str());
-
-		nxt_log(LOG_VERBOSE, "Running executable client (%s)...", binary_fullname.c_str());
-
-		pid_t rs2pid = fork();
-
-		if (rs2pid > 0)
-		{
-			waitpid(rs2pid, &result, 0);
-		}
-		else
-		{
-			execve(binary_fullname.c_str(), params.c_array(), environ);
-			return 1;
-		}
+		execve(binary_fullname.c_str(), params.c_array(), environ);
+		return 1;
 	}
 
 	nxt_log(LOG_VERY_VERBOSE, "result: %i", result);
