@@ -562,6 +562,18 @@ int main(int argc, char** argv) try
 		nxt_log(LOG_LOG, "Closing...");
 	});
 
+	// Client window close button pressed
+	// Data always 00 01
+	ipc.register_handler(0x0020, [&](nxt_message&)
+	{
+		// This would be a great place to put a "are you sure you wish to quit" dialog !
+
+		nxt_message reply(0x000B, 4);
+		// Didn't check the official data sent here, but this seems like a safe bet
+		reply.add_raw("\x00\x01", 2);
+		ipc.send(reply);
+	});
+
 	std::thread fifo_thread([&ipc]() { ipc(); });
 
 // --- Launch the client ---
