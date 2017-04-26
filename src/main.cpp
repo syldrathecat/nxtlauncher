@@ -587,6 +587,8 @@ int main(int argc, char** argv) try
 
 	nxt_log(LOG_VERY_VERBOSE, "result: %i", result);
 
+	fifo_thread.join();
+
 	return result;
 }
 catch (std::exception& e)
