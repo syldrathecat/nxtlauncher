@@ -20,11 +20,11 @@ An unofficial re-distribution of the official launcher for Arch Linux is availab
 
 ## Why?
 
-The official Linux RuneScape launcher has a couple of annoying bugs that this works around, most notably keyboard focus being broken when switching between windows.
+The official Linux RuneScape launcher has consistently been released with annoying bugs that **nxtlauncher** avoids such as keyboard focus issues and the splash loading screen being stuck open.
 
 It also requires far less disk space to install than the official launcher (which depends on WebKitGTK+) and can integrate more naturally on non-Ubuntu platforms.
 
-Note that you still need to ensure you install the dependencies for the game client itself manually. Check for missing dependencies by using the command `ldd ~/Jagex/launcher/librs2client.so | grep "not found"` if the game does not load.
+Note that you still need to ensure you install the dependencies for the game client itself manually. Check for missing dependencies by using the command `ldd ~/Jagex/launcher/rs2client | grep "not found"` if the game does not load.
 
 ## Installation
 
@@ -32,7 +32,7 @@ Note that you still need to ensure you install the dependencies for the game cli
 
 ### Dependencies
 
-**nxtlauncher** depends on libdl and getopt (both part of glibc), libcurl, and liblzma.
+**nxtlauncher** depends on getopt (part of glibc), libcurl, and liblzma.
 
 ### Build + Install Steps
 

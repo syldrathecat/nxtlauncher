@@ -48,12 +48,6 @@
 // 3 = Brazilian Portuguese
 #define CLIENT_LANGUAGE "0"
 
-// Default client width
-#define CLIENT_WIDTH "1024"
-
-// Default client height
-#define CLIENT_HEIGHT "768"
-
 // Default client configuration URI
 #define CLIENT_CONFIG_URI "https://www.runescape.com/k=5/l=$(Language:0)/jav_config.ws"
 
@@ -400,14 +394,11 @@ int main(int argc, char** argv) try
 	std::string codebase = jav_config.get("codebase");
 	int binary_count = std::atoi(jav_config.get("binary_count").c_str());
 
-	if (!allow_insecure_dl)
+	if (!allow_insecure_dl && codebase.substr(0, 8) != "https://")
 	{
-		if (codebase.substr(0, 8) != "https://")
-		{
-			nxt_log(LOG_ERR, "Downloaded configuration instructed us to download files over plain-text HTTP. Aborting!");
-			nxt_log(LOG_ERR, "Set 'x_allow_insecure_dl=1' in %s to bypass this security check", preferences_path.c_str());
-			return 1;
-		}
+		nxt_log(LOG_ERR, "Downloaded configuration instructed us to download files over plain-text HTTP. Aborting!");
+		nxt_log(LOG_ERR, "Set 'x_allow_insecure_dl=1' in %s to bypass this security check", preferences_path.c_str());
+		return 1;
 	}
 
 	if (binary_count < 1)
