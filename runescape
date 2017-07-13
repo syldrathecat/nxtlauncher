@@ -10,8 +10,9 @@ for x in "$@"; do
 	esac
 done
 
-export PULSE_PROP_OVERRIDE="application.name='RuneScape' application.icon_name='runescape' media.role='game'"
-export SDL_VIDEO_X11_WMCLASS="RuneScape"
-export MESA_GL_VERSION_OVERRIDE=3.0
+
+export PULSE_PROP_OVERRIDE=${PULSE_PROP_OVERRIDE:-"application.name='RuneScape' application.icon_name='runescape' media.role='game'"}
+export SDL_VIDEO_X11_WMCLASS=${SDL_VIDEO_X11_WMCLASS:-"RuneScape"}
+export MESA_GL_VERSION_OVERRIDE=${MESA_GL_VERSION_OVERRIDE:-"3.0"}
 nxtlauncher --configURI $configURI$flags
 
