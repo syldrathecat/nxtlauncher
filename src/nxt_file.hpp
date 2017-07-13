@@ -15,6 +15,11 @@ class nxt_file
 			mode_text
 		};
 
+		// Recursively creates a directory
+		// The final component of the path is ignored unless it ends in a trailing
+		//    slash or is_dir is true
+		void mkdir(const char* path, bool is_dir = false);
+
 		// Reads a local file's contents in to a string
 		std::string get(const char* path, file_mode_t file_mode = mode_binary);
 

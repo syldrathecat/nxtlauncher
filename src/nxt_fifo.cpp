@@ -2,6 +2,7 @@
 #include "nxt_fifo.hpp"
 
 #include <stdexcept>
+#include <string>
 
 #include <cerrno>
 #include <cstring>

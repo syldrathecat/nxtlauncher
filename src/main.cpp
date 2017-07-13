@@ -59,8 +59,11 @@
 // Token in configuration URI to replace with the language number
 #define LANGUAGE_TOKEN "$(Language:0)"
 
-// Added by default to the end of the HOME environment variable to create the default preferences and binary path
+// Added to the end of the HOME environment variable to create the default preferences and binary path
 #define LAUNCHER_PATH_SUFFIX "/Jagex/launcher"
+
+// Added to the end of the HOME environment variable to create the default cache/user paths
+#define CACHE_PATH_SUFFIX "/Jagex"
 
 // Name of the config file from the launcher path to load by default
 #define PREFERENCES_SUFFIX "/preferences.cfg"
@@ -156,6 +159,7 @@ Replacement launcher program for RuneScape NXT.\n\
 
 	// Generates the path to the config file from either the command line setting,
 	//   environment variable or using a default
+	// Why not XDG_CONFIG_HOME? Drop-in compatability with the official launcher
 	std::string get_config_filename()
 	{
 		if (cmdline_config)
@@ -167,6 +171,22 @@ Replacement launcher program for RuneScape NXT.\n\
 			return std::string(env_nxtlauncher_config);
 
 		return get_launcher_path() + PREFERENCES_SUFFIX;
+	}
+
+	// Generates a default cache folder path
+	// Currently shared for both cache_folder and user_folder
+	// Why not XDG_CACHE_HOME? Drop-in compatability with the official launcher
+	std::string get_default_cache_folder()
+	{
+		const char* env_home = std::getenv("HOME");
+
+		if (!env_home)
+		{
+			nxt_log(LOG_ERR, "HOME environment variable not found");
+			return "/tmp";
+		}
+
+		return std::string(env_home) + CACHE_PATH_SUFFIX;
 	}
 
 	// Gets the configuration URI from either the command line setting or launcher config
@@ -252,7 +272,7 @@ Replacement launcher program for RuneScape NXT.\n\
 		return params;
 	}
 
-	// ATtempts to set the execute permission on a file
+	// Attempts to set the execute permission on a file
 	void make_executable(const char* binary_name)
 	{
 		struct stat binary_stat;
@@ -345,13 +365,30 @@ int main(int argc, char** argv) try
 
 	std::string preferences_path = get_config_filename();
 	nxt_log(LOG_VERBOSE, "Config filename is %s", preferences_path.c_str());
-	std::string preferences_data = file.get(preferences_path.c_str(), nxt_file::mode_text);
-	config.parse(preferences_data.c_str());
+
+	try
+	{
+		std::string preferences_data = file.get(preferences_path.c_str(), nxt_file::mode_text);
+		config.parse(preferences_data.c_str());
+	}
+	catch (std::exception& e)
+	{
+		nxt_log(LOG_LOG, "%s", e.what());
+		nxt_log(LOG_LOG, "Config file not present, using defaults");
+	}
+
+	std::string default_cache_folder = get_default_cache_folder();
 
 	std::string language     = config.get_else("Language", CLIENT_LANGUAGE),
-	            cache_folder = config.get("cache_folder"),
-	            user_folder  = config.get("user_folder"),
+	            cache_folder = config.get_else("cache_folder", default_cache_folder.c_str()),
+	            user_folder  = config.get_else("user_folder", default_cache_folder.c_str()),
 	            saved_config = config.get_else("x_saved_config_path", SAVED_CONFIG_LOCATION);
+
+	file.mkdir(cache_folder.c_str(), true);
+	file.mkdir(user_folder.c_str(), true);
+
+	if (saved_config.size() > 0)
+		file.mkdir(saved_config.c_str());
 
 	bool allow_insecure_dl = std::atoi(config.get_else("x_allow_insecure_dl", "0").c_str());
 
@@ -500,7 +537,7 @@ int main(int argc, char** argv) try
 	// Received after first 0x000D message (During loading)
 	// Data always 00 01 00 00 00 00 XX XX XX XX
 	// where XX XX XX XX is the game's window ID
-	ipc.register_handler(0x0002, [&](nxt_message& msg)
+	ipc.register_handler(0x0002, [&](nxt_message&)
 	{
 		nxt_log(LOG_LOG, "Loading...");
 	});

@@ -7,6 +7,7 @@
 #include <array>
 #include <memory>
 #include <stdexcept>
+#include <string>
 
 #include <cerrno>
 #include <cstdio>
