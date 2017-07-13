@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-void nxt_file::mkdir(const char* path)
+void nxt_file::mkdir(const char* path, bool is_dir)
 {
 	std::size_t length = std::strlen(path);
 
