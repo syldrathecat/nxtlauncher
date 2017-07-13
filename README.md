@@ -2,7 +2,7 @@
 
 **nxtlauncher** is a third-party launcher for RuneScape NXT on Linux.
 
-Current version is **2.0**, compatible with NXT **2.2.4**.
+Current version is **2.1**, compatible with NXT **2.2.4**.
 
 **Warning: Using this probably violates RuneScape's terms of service and might stop working one day.**
 

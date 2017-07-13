@@ -28,7 +28,7 @@
 
 // ---
 
-#define NXTLAUNCHER_VERSION "2.0"
+#define NXTLAUNCHER_VERSION "2.1"
 
 // Current compatible official launcher version
 #define LAUNCHER_COMPAT_VERSION 224
